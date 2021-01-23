@@ -4,11 +4,12 @@ import re
 import threading
 import time
 import random
-
+import threading
 import pymongo
 import requests
 from fake_useragent import UserAgent
 from lxml import etree
+from retrying import retry
 
 from getCookies import save_cookies
 from getCookies import read_data
@@ -22,12 +23,14 @@ logging.basicConfig(
 
 BASE_URL = 'https://movie.douban.com/'
 movie_api = 'j/new_search_subjects?sort=U&range=0,10&tags=电影&start={}'
-PAGE = 1000
+PAGE = 10000
+PROXY = {'http': '47.104.14.188:16819', 'https': '47.104.14.188:16819'}
 
-
-class DoubanSpider():
-    def __init__(self):
+class DoubanSpider(threading.Thread):
+    def __init__(self, smp,page):
         super().__init__()
+        self.smp = smp
+        self.page = page
         self.ua = UserAgent()
         self.init_mongodb_client()
         
@@ -36,14 +39,14 @@ class DoubanSpider():
         client = pymongo.MongoClient(host='localhost', port=27017)
         db = client['douban']
         self.movies = db['movies']
-    
+
+    @retry(stop_max_attempt_number=2)
     def crwal_api(self, url):
         # crwal a url and return its json data
         logging.info('Crwaling %s' % url)
         try:
-            headers = {'User-Agent': self.ua.random,}
-            r = requests.get(url, headers=headers)
-            r.text
+            headers = {'User-Agent': self.ua.random}
+            r = requests.get(url, headers=headers, proxies=PROXY, timeout=10)
             if r.status_code == 200:
                 return r
             logging.warning('Get invalid status {} while crwal {}'.format(r.status_code, url))
@@ -112,25 +115,28 @@ class DoubanSpider():
         )
         logging.info('{} saved successful!'.format(data['name']))
 
- 
-    def run(self, page):
+    def run(self):
         """
         :param page: the page number offset
         """
-        urls = self.crwal_index(page)
-        for url in urls:
-            html = self.crwal_detail(url)
-            data = self.parse_detail(html)
-            self.save_mongo(data)
-            time.sleep(2)
+        with self.smp:
+            urls = self.crwal_index(self.page)
+            for url in urls:
+                html = self.crwal_detail(url)
+                data = self.parse_detail(html)
+                self.save_mongo(data)
+                time.sleep(2)
 
+    def test_ip(self):
+        url = 'http://ip100.info/ip.php'
+        r = requests.get(url, proxies=PROXY)
+        print(r.text)
 
 if __name__ == '__main__':
-    douban = DoubanSpider()
-    for i in range(0, PAGE, 20):
-        douban.run(i)
-   
+    smp = threading.Semaphore(6)
+    for i in range(0, PAGE*20, 20):
+        spider = DoubanSpider(smp ,i)
+        spider.start()
 
-
-
+    
 
