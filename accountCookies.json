@@ -1,0 +1,17 @@
+{
+    "accounts": [
+        {
+            "user": "18171487817",
+            "password": "85025309"
+        },
+        {
+            "user": "123",
+            "password": "12"
+        }
+    ],
+    "cookies": {
+        "1111": "0",
+        "18171487817": "bid=cREd5JumcJc;dbcl2=\"230160511:xuYhJuNgjB0\";ck=s8aO;ap_v=0,6.0;_pk_id.100001.8cb4=223cc471bee2b92a.1610773421.1.1610773423.1610773421.;_pk_ses.100001.8cb4=*;push_noty_num=0;push_doumail_num=0;__utma=30149280.1527365775.1610773424.1610773424.1610773424.1;__utmc=30149280;__utmz=30149280.1610773424.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none);__utmt=1;__utmv=30149280.23016;__utmb=30149280.2.10.1610773424;",
+        "123": "123"
+    }
+}
